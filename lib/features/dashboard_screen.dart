@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'records_screen.dart';
 import 'profile_screen.dart';
+import 'add_health_record_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -185,7 +186,12 @@ class DashboardHome extends StatelessWidget {
 
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF00A77F),
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddHealthRecordScreen()),
+          );
+        },
         child: const Icon(Icons.add, size: 28),
       ),
     );
