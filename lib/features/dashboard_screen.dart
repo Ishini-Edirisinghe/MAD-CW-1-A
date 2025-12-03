@@ -16,7 +16,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final List<Widget> _screens = [
     const DashboardHome(),
     const RecordsScreen(),
-    const ProfileScreen(),
+    const ProfilePage(),
   ];
 
   void _onNavTapped(int index) {
