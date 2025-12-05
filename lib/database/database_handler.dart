@@ -3,17 +3,23 @@ import 'package:sqflite/sqflite.dart';
 import '../model/health_records.dart';
 
 class DatabaseHandler {
+  // Singleton instance
   static final DatabaseHandler instance = DatabaseHandler._init();
   static Database? _database;
 
   DatabaseHandler._init();
 
+  // Table Name
+  static const String tableHealth = 'health_records';
+
+  // Getter for DB
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB('health_records.db');
     return _database!;
   }
 
+  // Initialize DB
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
@@ -21,9 +27,10 @@ class DatabaseHandler {
     return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
+  // Create Tables
   Future _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE health_records (
+      CREATE TABLE $tableHealth (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT NOT NULL,
         steps INTEGER NOT NULL,
@@ -33,24 +40,29 @@ class DatabaseHandler {
     ''');
   }
 
-  // Insert Record
+  // INSERT Record
   Future<int> insertRecord(HealthRecord record) async {
-    final db = await instance.database;
-    return await db.insert('health_records', record.toMap());
+    final db = await database;
+    return await db.insert(
+      tableHealth,
+      record.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
-  // Fetch All
+  // FETCH all records
   Future<List<HealthRecord>> getRecords() async {
-    final db = await instance.database;
-    final result = await db.query('health_records', orderBy: "id DESC");
-    return result.map((map) => HealthRecord.fromMap(map)).toList();
+    final db = await database;
+    final result = await db.query(tableHealth, orderBy: "id DESC");
+    return result.map((e) => HealthRecord.fromMap(e)).toList();
   }
 
-  // Get By ID
+  // FETCH by ID
   Future<HealthRecord?> getRecordById(int id) async {
-    final db = await instance.database;
+    final db = await database;
+
     final result = await db.query(
-      'health_records',
+      tableHealth,
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -61,26 +73,134 @@ class DatabaseHandler {
     return null;
   }
 
-  // Update Record
+  // UPDATE a record
   Future<int> updateRecord(HealthRecord record) async {
-    final db = await instance.database;
+    final db = await database;
     return await db.update(
-      'health_records',
+      tableHealth,
       record.toMap(),
       where: 'id = ?',
       whereArgs: [record.id],
     );
   }
 
-  // Delete Record
+  // DELETE a record
   Future<int> deleteRecord(int id) async {
-    final db = await instance.database;
-    return await db.delete('health_records', where: 'id = ?', whereArgs: [id]);
+    final db = await database;
+    return await db.delete(tableHealth, where: 'id = ?', whereArgs: [id]);
   }
 
-  // Close DB
+  // NEW → GET LAST 7 DAYS RECORDS
+  Future<List<HealthRecord>> getLast7DaysRecords() async {
+    final db = await database;
+
+    final List<Map<String, dynamic>> result = await db.rawQuery('''
+      SELECT * FROM $tableHealth 
+      ORDER BY date DESC
+      LIMIT 7
+    ''');
+
+    // Convert map → model
+    return result
+        .map((e) => HealthRecord.fromMap(e))
+        .toList()
+        .reversed
+        .toList();
+  }
+
+  // CLOSE Database
   Future close() async {
-    final db = await instance.database;
-    db.close();
+    final db = await _database;
+    if (db != null) {
+      await db.close();
+      _database = null;
+    }
   }
 }
+
+// import 'package:path/path.dart';
+// import 'package:sqflite/sqflite.dart';
+// import '../model/health_records.dart';
+
+// class DatabaseHandler {
+//   static final DatabaseHandler instance = DatabaseHandler._init();
+//   static Database? _database;
+
+//   DatabaseHandler._init();
+
+//   Future<Database> get database async {
+//     if (_database != null) return _database!;
+//     _database = await _initDB('health_records.db');
+//     return _database!;
+//   }
+
+//   Future<Database> _initDB(String filePath) async {
+//     final dbPath = await getDatabasesPath();
+//     final path = join(dbPath, filePath);
+
+//     return await openDatabase(path, version: 1, onCreate: _createDB);
+//   }
+
+//   Future _createDB(Database db, int version) async {
+//     await db.execute('''
+//       CREATE TABLE health_records (
+//         id INTEGER PRIMARY KEY AUTOINCREMENT,
+//         date TEXT NOT NULL,
+//         steps INTEGER NOT NULL,
+//         calories INTEGER NOT NULL,
+//         water INTEGER NOT NULL
+//       )
+//     ''');
+//   }
+
+//   // Insert Record
+//   Future<int> insertRecord(HealthRecord record) async {
+//     final db = await instance.database;
+//     return await db.insert('health_records', record.toMap());
+//   }
+
+//   // Fetch All
+//   Future<List<HealthRecord>> getRecords() async {
+//     final db = await instance.database;
+//     final result = await db.query('health_records', orderBy: "id DESC");
+//     return result.map((map) => HealthRecord.fromMap(map)).toList();
+//   }
+
+//   // Get By ID
+//   Future<HealthRecord?> getRecordById(int id) async {
+//     final db = await instance.database;
+//     final result = await db.query(
+//       'health_records',
+//       where: 'id = ?',
+//       whereArgs: [id],
+//     );
+
+//     if (result.isNotEmpty) {
+//       return HealthRecord.fromMap(result.first);
+//     }
+//     return null;
+//   }
+
+//   // Update Record
+//   Future<int> updateRecord(HealthRecord record) async {
+//     final db = await instance.database;
+//     return await db.update(
+//       'health_records',
+//       record.toMap(),
+//       where: 'id = ?',
+//       whereArgs: [record.id],
+//     );
+//   }
+
+//   // Delete Record
+//   Future<int> deleteRecord(int id) async {
+//     final db = await instance.database;
+//     return await db.delete('health_records', where: 'id = ?', whereArgs: [id]);
+//   }
+
+//   // Close DB
+//   Future close() async {
+//     final db = await instance.database;
+//     db.close();
+//   }
+// }
