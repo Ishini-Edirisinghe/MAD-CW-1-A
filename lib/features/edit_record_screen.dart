@@ -147,29 +147,38 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: kToolbarHeight + 20,
       decoration: const BoxDecoration(
-        color: Colors.green,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+        gradient: LinearGradient(
+          colors: [Color(0xFF00C6A2), Color(0xFF00A77F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
+          // Back Button
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+
+          // Title - SAME STYLE AS ADD SCREEN
+          const Text(
             "Edit Health Record",
             style: TextStyle(
               color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 4),
-          Text(
-            "Update your health data",
-            style: TextStyle(color: Colors.white70),
+
+          // Close Button
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close, color: Colors.white),
           ),
         ],
       ),
@@ -200,7 +209,7 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.green),
+              Icon(icon, color: Color(0xFF00A77F)),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -252,7 +261,7 @@ class _EditRecordScreenState extends State<EditRecordScreen> {
           child: ElevatedButton(
             onPressed: _saveRecord,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Color(0xFF00A77F),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),

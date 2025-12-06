@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/model/health_records.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../database/database_handler.dart';
+import '../model/health_records.dart';
+import 'add_health_record_screen.dart';
 import 'records_screen.dart';
 import 'goal_screen.dart';
-import 'add_health_record_screen.dart';
-import '../model/health_records.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -16,7 +15,8 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
 
   int todaySteps = 0;
@@ -28,38 +28,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     _loadTodayActivity();
     _loadWeeklyData();
   }
 
-  Future<void> _loadTodayActivity() async {
-    final today = DateFormat("MM/dd/yyyy").format(DateTime.now());
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
-    final records = await DatabaseHandler.instance.getRecords();
-    final todayRecord = records.where((rec) => rec.date == today).toList();
-
-    if (todayRecord.isNotEmpty) {
-      setState(() {
-        todaySteps = todayRecord.first.steps;
-        todayCalories = todayRecord.first.calories;
-        todayWater = todayRecord.first.water;
-      });
-    } else {
-      setState(() {
-        todaySteps = 0;
-        todayCalories = 0;
-        todayWater = 0;
-      });
+  // Refresh when app returns from background
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadTodayActivity();
+      _loadWeeklyData();
     }
   }
 
+  // Load today's record
+  Future<void> _loadTodayActivity() async {
+    final today = DateFormat("MM/dd/yyyy").format(DateTime.now());
+    final records = await DatabaseHandler.instance.getRecords();
+
+    final todayRecord = records.where((rec) => rec.date == today).toList();
+
+    setState(() {
+      if (todayRecord.isNotEmpty) {
+        todaySteps = todayRecord.first.steps;
+        todayCalories = todayRecord.first.calories;
+        todayWater = todayRecord.first.water;
+      } else {
+        todaySteps = 0;
+        todayCalories = 0;
+        todayWater = 0;
+      }
+    });
+  }
+
+  // Load weekly data
   Future<void> _loadWeeklyData() async {
     final all = await DatabaseHandler.instance.getRecords();
 
     DateTime now = DateTime.now();
-    DateTime startOfWeek = now.subtract(
-      Duration(days: now.weekday - 1),
-    ); // Monday
+    DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
 
     weeklyRecords = all.where((r) {
       DateTime d = DateFormat("MM/dd/yyyy").parse(r.date);
@@ -70,6 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {});
   }
 
+  // Screens list
   List<Widget> get _screens => [
     DashboardHome(
       steps: todaySteps,
@@ -82,11 +98,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     ),
     const RecordsScreen(),
-    const ProfilePage(),
+    const GoalPage(),
   ];
 
-  void _onNavTapped(int index) {
+  void _onNavTapped(int index) async {
     setState(() => _selectedIndex = index);
+
+    // Auto refresh when switching back to Dashboard
+    if (index == 0) {
+      await _loadTodayActivity();
+      await _loadWeeklyData();
+    }
   }
 
   @override
@@ -98,17 +120,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTap: _onNavTapped,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
+            icon: Icon(Icons.dashboard, color: Color(0xFF00A77F)),
             label: "Dashboard",
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "Records"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt, color: Color(0xFF00A77F)),
+            label: "Records",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, color: Color(0xFF00A77F)),
+            label: "Profile",
+          ),
         ],
       ),
     );
   }
 }
 
+// DASHBOARD HOME UI
 class DashboardHome extends StatelessWidget {
   final int steps;
   final int calories;
@@ -138,7 +167,7 @@ class DashboardHome extends StatelessWidget {
               _header(),
               _todaySection(),
               _weeklySummaryCard(),
-              const SizedBox(height: 80),
+              const SizedBox(height: 60),
             ],
           ),
         ),
@@ -147,18 +176,21 @@ class DashboardHome extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF00A77F),
         onPressed: () async {
-          await Navigator.push(
+          final saved = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddHealthRecordScreen()),
           );
-          onRefresh();
+
+          if (saved == true) {
+            onRefresh();
+          }
         },
-        child: const Icon(Icons.add, size: 28),
+        child: const Icon(Icons.add, size: 28, color: Colors.white70),
       ),
     );
   }
 
-  // HEADER UI
+  // HEADER
   Widget _header() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -173,7 +205,7 @@ class DashboardHome extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 20),
+          SizedBox(height: 25),
           Text(
             "Dashboard",
             style: TextStyle(
@@ -182,7 +214,7 @@ class DashboardHome extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 2),
+          SizedBox(height: 4),
           Text(
             "Track your health journey",
             style: TextStyle(color: Colors.white70, fontSize: 15),
@@ -192,10 +224,10 @@ class DashboardHome extends StatelessWidget {
     );
   }
 
-  // TODAY ACTIVITY UI
+  // TODAY SECTION
   Widget _todaySection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -204,6 +236,7 @@ class DashboardHome extends StatelessWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
+
           _activityCard(
             title: "Steps Walked",
             value: steps.toString(),
@@ -212,6 +245,7 @@ class DashboardHome extends StatelessWidget {
             color: Colors.orange,
           ),
           const SizedBox(height: 14),
+
           _activityCard(
             title: "Calories Burned",
             value: calories.toString(),
@@ -220,6 +254,7 @@ class DashboardHome extends StatelessWidget {
             color: Colors.redAccent,
           ),
           const SizedBox(height: 14),
+
           _activityCard(
             title: "Water Intake",
             value: water.toString(),
@@ -281,7 +316,7 @@ class DashboardHome extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 28),
@@ -294,7 +329,7 @@ class DashboardHome extends StatelessWidget {
   // WEEKLY SUMMARY CARD
   Widget _weeklySummaryCard() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -329,7 +364,7 @@ class DashboardHome extends StatelessWidget {
     );
   }
 
-  // WEEKLY BAR CHART
+  // WEEKLY CHART
   Widget buildWeeklyBarChart(List<HealthRecord> weeklyRecords) {
     Map<int, HealthRecord?> dayData = {
       1: null,
@@ -354,7 +389,6 @@ class DashboardHome extends StatelessWidget {
       bars.add(
         BarChartGroupData(
           x: i,
-          barsSpace: 4,
           barRods: [
             BarChartRodData(
               toY: (r?.steps ?? 0).toDouble(),
@@ -377,13 +411,12 @@ class DashboardHome extends StatelessWidget {
       height: 220,
       child: BarChart(
         BarChartData(
-          gridData: FlGridData(show: true),
           borderData: FlBorderData(show: false),
           barGroups: bars,
           titlesData: FlTitlesData(
+            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -397,14 +430,13 @@ class DashboardHome extends StatelessWidget {
                     6: "Sat",
                     7: "Sun",
                   };
-
                   return Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: 6),
                     child: Text(
-                      days[value.toInt()] ?? "",
+                      days[value.toInt()]!,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w500,
                         fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   );

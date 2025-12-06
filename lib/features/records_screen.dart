@@ -14,82 +14,158 @@ class _RecordsScreenState extends State<RecordsScreen> {
   final TextEditingController dateController = TextEditingController();
 
   List<HealthRecord> records = [];
+  List<HealthRecord> allRecords = [];
   String selectedSort = "Newest";
 
   @override
   void initState() {
     super.initState();
+
+    dateController.addListener(() {
+      setState(() {}); // update clear button visibility
+    });
+
     _loadRecords();
   }
 
   Future<void> _loadRecords() async {
     final data = await DatabaseHandler.instance.getRecords();
 
-    // Optional: sort data if you want
+    // Sort data
     if (selectedSort == "Oldest") {
       data.sort((a, b) => a.id!.compareTo(b.id!));
     } else {
       data.sort((a, b) => b.id!.compareTo(a.id!));
     }
 
+    allRecords = data;
+
+    // Apply date filter if exists
+    if (dateController.text.isNotEmpty) {
+      _filterByDate(dateController.text);
+    } else {
+      setState(() {
+        records = allRecords;
+      });
+    }
+  }
+
+  void _filterByDate(String selectedDate) {
+    if (selectedDate.isEmpty) {
+      setState(() {
+        records = allRecords;
+      });
+      return;
+    }
+
+    // Convert selected "MM/DD/YYYY" to DateTime
+    final parts = selectedDate.split("/");
+    final selected = DateTime(
+      int.parse(parts[2]),
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+    );
+
+    final filtered = allRecords.where((record) {
+      try {
+        DateTime dbDate;
+
+        // If database format is YYYY-MM-DD
+        if (record.date.contains("-")) {
+          dbDate = DateTime.parse(record.date.trim());
+        }
+        // If stored as MM/DD/YYYY
+        else if (record.date.contains("/")) {
+          final p = record.date.split("/");
+          dbDate = DateTime(int.parse(p[2]), int.parse(p[0]), int.parse(p[1]));
+        } else {
+          return false;
+        }
+
+        return dbDate.year == selected.year &&
+            dbDate.month == selected.month &&
+            dbDate.day == selected.day;
+      } catch (e) {
+        return false;
+      }
+    }).toList();
+
     setState(() {
-      records = data;
+      records = filtered;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        backgroundColor: Colors.green,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          "Health Records",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(30),
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: Text(
-              "View and manage your records",
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: null,
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF00C6A2), Color(0xFF00A77F)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 20),
+                Text(
+                  "Health Records",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  "View and manage your records",
+                  style: TextStyle(color: Colors.white70, fontSize: 15),
+                ),
+              ],
             ),
           ),
-        ),
-      ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildSearchField(),
-            const SizedBox(height: 12),
-            _buildSortDropdown(),
-            const SizedBox(height: 16),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildSearchField(),
+                  const SizedBox(height: 12),
+                  _buildSortDropdown(),
+                  const SizedBox(height: 16),
 
-            Expanded(
-              child: records.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "No records found",
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: records.length,
-                      itemBuilder: (context, index) {
-                        return _buildRecordCard(records[index]);
-                      },
-                    ),
+                  Expanded(
+                    child: records.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "No records found",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: records.length,
+                            itemBuilder: (context, index) {
+                              return _buildRecordCard(records[index]);
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -97,9 +173,19 @@ class _RecordsScreenState extends State<RecordsScreen> {
   Widget _buildSearchField() {
     return TextField(
       controller: dateController,
+      readOnly: true,
       decoration: InputDecoration(
-        hintText: "mm/dd/yyyy",
-        prefixIcon: const Icon(Icons.search),
+        hintText: "Select a date",
+        prefixIcon: const Icon(Icons.calendar_month),
+        suffixIcon: dateController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  dateController.clear();
+                  _filterByDate('');
+                },
+              )
+            : null,
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -108,9 +194,20 @@ class _RecordsScreenState extends State<RecordsScreen> {
           borderSide: BorderSide.none,
         ),
       ),
-      onChanged: (value) {
-        // Optional: implement search filtering here
-        // For now, just re-load all records or filter the list manually
+      onTap: () async {
+        DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2035),
+        );
+
+        if (picked != null) {
+          String formatted = "${picked.month}/${picked.day}/${picked.year}";
+
+          dateController.text = formatted;
+          _filterByDate(formatted);
+        }
       },
     );
   }
@@ -136,10 +233,8 @@ class _RecordsScreenState extends State<RecordsScreen> {
           ),
         ],
         onChanged: (value) {
-          setState(() {
-            selectedSort = value ?? "Newest";
-            _loadRecords();
-          });
+          selectedSort = value ?? "Newest";
+          _loadRecords();
         },
       ),
     );
@@ -155,7 +250,6 @@ class _RecordsScreenState extends State<RecordsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// --- TITLE + ACTION ICONS ROW ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -172,7 +266,6 @@ class _RecordsScreenState extends State<RecordsScreen> {
                     ),
                   ],
                 ),
-
                 Row(
                   children: [
                     IconButton(
@@ -184,14 +277,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
                             builder: (_) => EditRecordScreen(record: record),
                           ),
                         );
-                        _loadRecords(); // Refresh after edit
+                        _loadRecords();
                       },
                     ),
-
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () async {
-                        // Confirm delete dialog
                         final confirmed = await showDialog<bool>(
                           context: context,
                           builder: (_) => AlertDialog(
@@ -227,7 +318,6 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
             const SizedBox(height: 12),
 
-            /// --- INFO ROW ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
