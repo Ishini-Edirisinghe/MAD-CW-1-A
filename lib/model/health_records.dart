@@ -13,7 +13,6 @@ class HealthRecord {
     required this.water,
   });
 
-  // Convert model → Map (for database insert/update)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -24,7 +23,6 @@ class HealthRecord {
     };
   }
 
-  // Convert Map → Model (for reading from database)
   factory HealthRecord.fromMap(Map<String, dynamic> map) {
     return HealthRecord(
       id: map['id'],

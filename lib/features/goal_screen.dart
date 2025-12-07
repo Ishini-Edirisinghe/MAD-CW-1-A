@@ -5,7 +5,7 @@ class GoalPage extends StatelessWidget {
 
   final int dailyStepsGoal = 8000;
   final int waterIntakeGoal = 2500;
-  final int caloriesGoal = 2200; // ADDED
+  final int caloriesGoal = 2200;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,6 @@ class GoalPage extends StatelessWidget {
 
       body: Column(
         children: [
-          // Custom Gradient Header
           Container(
             padding: const EdgeInsets.all(20),
             width: double.infinity,
@@ -48,7 +47,6 @@ class GoalPage extends StatelessWidget {
             ),
           ),
 
-          // Body content
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),

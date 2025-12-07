@@ -18,7 +18,6 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
 
   final DatabaseHandler dbHandler = DatabaseHandler.instance;
 
-  // Gradient colors for reuse
   final Gradient _gradient = const LinearGradient(
     colors: [Color(0xFF00C6A2), Color(0xFF00A77F)],
     begin: Alignment.topLeft,
@@ -38,110 +37,67 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
-          decoration: BoxDecoration(gradient: _gradient),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            automaticallyImplyLeading: false,
-
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-
-            title: const Text(
-              "Add Health Record",
-              style: TextStyle(color: Colors.white),
-            ),
-
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        ),
-      ),
-
+      appBar: _buildHeader("Add Health Record"),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
           child: Column(
             children: [
               _buildDatePickerCard(),
-              _buildInputCard(
+              _buildNumberInputCard(
                 icon: Icons.directions_walk,
                 label: "Steps Walked",
                 controller: stepsCtrl,
                 hint: "e.g., 8500",
-                keyboardType: TextInputType.number,
               ),
-              _buildInputCard(
+              _buildNumberInputCard(
                 icon: Icons.local_fire_department,
                 label: "Calories Burned (kcal)",
                 controller: caloriesCtrl,
                 hint: "e.g., 420",
-                keyboardType: TextInputType.number,
               ),
-              _buildInputCard(
+              _buildNumberInputCard(
                 icon: Icons.water_drop,
                 label: "Water Intake (ml)",
                 controller: waterCtrl,
                 hint: "e.g., 2100",
-                keyboardType: TextInputType.number,
               ),
 
               const SizedBox(height: 20),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("Cancel"),
-                  ),
-
-                  // Save Button with gradient background
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                    ),
-                    onPressed: _saveRecord,
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        gradient: _gradient,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 20,
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "Save",
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              _buildButtons(_saveRecord),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildHeader(String title) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: Container(
+        decoration: BoxDecoration(gradient: _gradient),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
         ),
       ),
     );
@@ -158,19 +114,17 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
-                const Icon(Icons.calendar_month, color: Color(0xFF00A77F)),
-                const SizedBox(width: 8),
-                const Text(
-                  "Date",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+              children: const [
+                Icon(Icons.calendar_month, color: Color(0xFF00A77F)),
+                SizedBox(width: 8),
+                Text("Date", style: TextStyle(fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 10),
             TextField(
               controller: dateCtrl,
               readOnly: true,
+              onTap: _pickDate,
               decoration: InputDecoration(
                 hintText: "Select Date",
                 border: OutlineInputBorder(
@@ -178,7 +132,6 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
                 ),
                 suffixIcon: const Icon(Icons.calendar_today),
               ),
-              onTap: _pickDate,
             ),
           ],
         ),
@@ -188,15 +141,13 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
 
   Future<void> _pickDate() async {
     DateTime initialDate = DateTime.now();
-
-    // If user already picked a date, parse and show it as initial date
     if (dateCtrl.text.isNotEmpty) {
       try {
         initialDate = DateFormat("MM/dd/yyyy").parse(dateCtrl.text);
       } catch (_) {}
     }
 
-    final DateTime? pickedDate = await showDatePicker(
+    final pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: DateTime(2000),
@@ -208,6 +159,97 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
         dateCtrl.text = DateFormat("MM/dd/yyyy").format(pickedDate);
       });
     }
+  }
+
+  Widget _buildNumberInputCard({
+    required IconData icon,
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+  }) {
+    return Card(
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: const Color(0xFF00A77F)),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: hint,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButtons(Function() saveAction) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Cancel button (same for both screens)
+        OutlinedButton(
+          onPressed: () => Navigator.pop(context),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            side: const BorderSide(color: Colors.grey),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: const Text("Cancel"),
+        ),
+
+        // SAVE BUTTON (WHITE TEXT + GRADIENT)
+        ElevatedButton(
+          onPressed: saveAction,
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: _gradient,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 28),
+              child: const Text(
+                "Save",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ), // WHITE TEXT
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   void _saveRecord() async {
@@ -235,48 +277,5 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
     ).showSnackBar(const SnackBar(content: Text("Record saved successfully!")));
 
     Navigator.pop(context, true);
-  }
-
-  Widget _buildInputCard({
-    required IconData icon,
-    required String label,
-    required TextEditingController controller,
-    required String hint,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: Color(0xFF00A77F)),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              decoration: InputDecoration(
-                hintText: hint,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
