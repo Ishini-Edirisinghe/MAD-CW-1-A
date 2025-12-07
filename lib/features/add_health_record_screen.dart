@@ -205,46 +205,34 @@ class _AddHealthRecordScreenState extends State<AddHealthRecordScreen> {
 
   Widget _buildButtons(Function() saveAction) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Cancel button (same for both screens)
-        OutlinedButton(
-          onPressed: () => Navigator.pop(context),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            side: const BorderSide(color: Colors.grey),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-          child: const Text("Cancel"),
-        ),
-
-        // SAVE BUTTON (WHITE TEXT + GRADIENT)
-        ElevatedButton(
-          onPressed: saveAction,
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: _gradient,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 28),
-              child: const Text(
-                "Save",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                ), // WHITE TEXT
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: Colors.grey),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
+            ),
+            child: const Text("Cancel"),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: saveAction,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              backgroundColor: const Color(0xFF00A77F),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text(
+              "Save",
+              style: TextStyle(fontSize: 16, color: Colors.white),
             ),
           ),
         ),
