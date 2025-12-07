@@ -121,7 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             label: "Dashboard",
           ),
           BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "Records"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Goal"),
         ],
       ),
     );

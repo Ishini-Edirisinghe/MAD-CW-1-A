@@ -35,7 +35,7 @@ class StartScreen extends StatelessWidget {
                   ),
                   child: const Icon(
                     Icons.favorite_rounded,
-                    color: Colors.green,
+                    color: Color(0xFF00A77F),
                     size: 40,
                   ),
                 ),
