@@ -40,7 +40,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.dispose();
   }
 
-  // Refresh when app returns from background
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -49,7 +48,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
-  // Load today's record
   Future<void> _loadTodayActivity() async {
     final today = DateFormat("MM/dd/yyyy").format(DateTime.now());
     final records = await DatabaseHandler.instance.getRecords();
@@ -69,7 +67,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     });
   }
 
-  // Load weekly data
   Future<void> _loadWeeklyData() async {
     final all = await DatabaseHandler.instance.getRecords();
 
@@ -85,7 +82,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     setState(() {});
   }
 
-  // Screens list
   List<Widget> get _screens => [
     DashboardHome(
       steps: todaySteps,
@@ -104,7 +100,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   void _onNavTapped(int index) async {
     setState(() => _selectedIndex = index);
 
-    // Auto refresh when switching back to Dashboard
     if (index == 0) {
       await _loadTodayActivity();
       await _loadWeeklyData();
@@ -133,7 +128,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 }
 
-// DASHBOARD HOME UI
 class DashboardHome extends StatelessWidget {
   final int steps;
   final int calories;
@@ -186,7 +180,6 @@ class DashboardHome extends StatelessWidget {
     );
   }
 
-  // HEADER
   Widget _header() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -220,7 +213,6 @@ class DashboardHome extends StatelessWidget {
     );
   }
 
-  // TODAY SECTION
   Widget _todaySection() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -263,7 +255,6 @@ class DashboardHome extends StatelessWidget {
     );
   }
 
-  // ACTIVITY CARD UI
   Widget _activityCard({
     required String title,
     required String value,
@@ -322,7 +313,6 @@ class DashboardHome extends StatelessWidget {
     );
   }
 
-  // WEEKLY SUMMARY CARD
   Widget _weeklySummaryCard() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -360,7 +350,6 @@ class DashboardHome extends StatelessWidget {
     );
   }
 
-  // WEEKLY CHART
   Widget buildWeeklyBarChart(List<HealthRecord> weeklyRecords) {
     Map<int, HealthRecord?> dayData = {
       1: null,
