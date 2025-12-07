@@ -118,19 +118,15 @@ class _DashboardScreenState extends State<DashboardScreen>
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTapped,
+        selectedItemColor: Color(0xFF00A77F), // selected color
+        unselectedItemColor: Colors.grey, // unselected color
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard, color: Color(0xFF00A77F)),
+            icon: Icon(Icons.dashboard),
             label: "Dashboard",
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt, color: Color(0xFF00A77F)),
-            label: "Records",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, color: Color(0xFF00A77F)),
-            label: "Profile",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "Records"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
